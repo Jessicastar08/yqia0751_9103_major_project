@@ -13,16 +13,36 @@ let numSegments = 90;
 let imgDrwPrps = {aspect: 0, width: 0, height: 0, xOffset: 0, yOffset: 0};
 let canvasAspectRatio = 0;
 
+// couple 数值
+let coupleStartX_raw = 380;  // 起点 X
+let coupleStartY_raw = 520;  // 起点 Y
+
+let coupleEndX_raw = 1600;  // 终点 X
+let coupleEndY_raw = 1460;  // 终点 Y
+
+// 实际在当前画布上绘制用的坐标
+let coupleStartX, coupleStartY;
+let coupleEndX, coupleEndY;
+
+// 动画参数
+let coupleProgress = 0;
+// How long the couple takes to walk from start to end
+// Walking speed control, at 60 FPS, 480 frames = 8 seconds. 
+let coupleDuration = 480;  
+let coupleStartScale = 0.6; // 远处的大小
+let coupleEndScale   = 1.8; // 靠近时的大小
+
+
 // Preload all the assets
 function preload() {
 
-  baseImg = loadImage('assets/Edvard_Munch_The_Scream.jpeg');  
+  baseImg = loadImage('assets/Edvard_Munch_The_Scream (3).jpeg');  
 
-  layerImgs[0] = loadImage('assets/firesky.png');
-  layerImgs[1] = loadImage('assets/bluesky.png');
-  layerImgs[2] = loadImage('assets/greensky.png');
+  layerImgs[0] = loadImage('assets/red.png');
+  layerImgs[1] = loadImage('assets/blue.png');
+  layerImgs[2] = loadImage('assets/green.png');
   layerImgs[3] = loadImage('assets/bridge.png');
-  layerImgs[4] = loadImage('assets/screamer.png');
+  layerImgs[4] = loadImage('assets/scream.png');
   layerImgs[5] = loadImage('assets/couple.png');
 }
 
@@ -45,6 +65,9 @@ function setup() {
       segment.calculateSegDrawProps();
     }
   }
+
+   // 根据当前图片尺寸，更新 couple 的起点终点坐标
+  updateCouplePositions();
 }
 
 function draw() {
@@ -60,13 +83,53 @@ function draw() {
   );
 
     // Then draw all segment layers with animation
-    for (const segArray of layerSegments) {
+    for (let i = 0; i < layerSegments.length; i++) {
+     if (i === 5) continue; // 5 是 couple 图层，先跳过
+
+     const segArray = layerSegments[i];
       for (const segment of segArray) {
         segment.animate();
-      segment.draw();
+        segment.draw();
       }
     }
-} 
+
+    drawCoupleImage();
+}
+  
+function updateCouplePositions() {
+
+  // 计算图片在真实画布中的缩放比例
+  let scaleX = imgDrwPrps.width  / baseImg.width;
+  let scaleY = imgDrwPrps.height / baseImg.height;
+
+  // 用 raw 像素坐标，在缩放后重新定位
+  coupleStartX = imgDrwPrps.xOffset + coupleStartX_raw * scaleX;
+  coupleStartY = imgDrwPrps.yOffset + coupleStartY_raw * scaleY;
+
+  coupleEndX   = imgDrwPrps.xOffset + coupleEndX_raw * scaleX;
+  coupleEndY   = imgDrwPrps.yOffset + coupleEndY_raw * scaleY;
+}
+
+
+function drawCoupleImage() {
+  // 0~1 的进度，用 frameCount 控制，从起点走到终点
+  coupleProgress = (frameCount % coupleDuration) / coupleDuration;
+
+  // 位置插值
+  let x = lerp(coupleStartX, coupleEndX, coupleProgress);
+  let y = lerp(coupleStartY, coupleEndY, coupleProgress);
+
+  // 大小插值（远处小，走近变大）
+  let s = lerp(coupleStartScale, coupleEndScale, coupleProgress);
+
+  push();
+  translate(x, y);
+  scale(s);
+  imageMode(CENTER);
+  image(layerImgs[5], 0, 0, layerImgs[5].width, layerImgs[5].height);
+  imageMode(CORNER); // 防止影响别的地方
+  pop();
+}
 
 function windowResized() {
   // Resize the canvas to the new window size
@@ -78,6 +141,8 @@ function windowResized() {
       segment.calculateSegDrawProps();
     }
   }
+
+  updateCouplePositions();
 }
 
 // Split an image into many segments
@@ -273,5 +338,6 @@ class ImageSegment {
 
     // Draw the line
     line(x1, y1, x2, y2);
+    
   }
 }
