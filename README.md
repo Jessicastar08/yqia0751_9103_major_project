@@ -31,3 +31,16 @@ The main figure gently sway, creating a constant sense of unease and tension. Th
 ### Summary
 The animation runs on its own over time. The sky slowly changes between day and night, the couple walks across the bridge, and the main figure keeps swaying gently. Every visual change follows the time cycle, so the viewer just watches the scene unfold without needing to do anything.
 
+
+
+
+
+---
+
+
+
+
+
+# Chosen Interaction Method: **Time**
+
+# Part 2: Differences with Group Members
