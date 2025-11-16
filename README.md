@@ -13,6 +13,7 @@ The cycle lasts **18** seconds, during which the scene gradually changes over ti
 1. The couple walks along the bridge
 2. The sky transitions between warm dusk tones and deep nighttime blue
 3. The main figure sways slightly
+
 Note: A complete cycle lasts 36 seconds (18 seconds from day to night, 18 seconds from night to day), repeating indefinitely.
 
 - **Person screaming**
