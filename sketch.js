@@ -27,8 +27,8 @@ let coupleEndX, coupleEndY;
 // 动画参数
 let coupleProgress = 0;
 // How long the couple takes to walk from start to end
-// Walking speed control, at 60 FPS, 480 frames = 8 seconds. 
-let coupleDuration = 480;  
+// Walking speed control, at 60 FPS, 360 frames = 6 seconds. 
+let coupleDuration = 360;  
 let coupleStartScale = 0.6; // 远处的大小
 let coupleEndScale   = 1.8; // 靠近时的大小
 
@@ -36,7 +36,7 @@ let coupleEndScale   = 1.8; // 靠近时的大小
 // Preload all the assets
 function preload() {
 
-  baseImg = loadImage('assets/Edvard_Munch_The_Scream (3).jpeg');  
+  baseImg = loadImage('assets/BG2.png');  
 
   layerImgs[0] = loadImage('assets/red.png');
   layerImgs[1] = loadImage('assets/blue.png');
@@ -72,6 +72,8 @@ function setup() {
 
 function draw() {
    background(0);
+
+   coupleProgress = (frameCount % coupleDuration) / coupleDuration;
 
   // First draw the full base image
    image(
@@ -112,9 +114,6 @@ function updateCouplePositions() {
 
 
 function drawCoupleImage() {
-  // 0~1 的进度，用 frameCount 控制，从起点走到终点
-  coupleProgress = (frameCount % coupleDuration) / coupleDuration;
-
   // 位置插值
   let x = lerp(coupleStartX, coupleEndX, coupleProgress);
   let y = lerp(coupleStartY, coupleEndY, coupleProgress);
@@ -310,6 +309,32 @@ class ImageSegment {
     // Only X moves, Y stays fixed
     this.currentX = this.drawXPos + waveOffset;
     this.currentY = this.drawYPos;
+  }
+
+  if (this.layerIndex === 4) {
+
+  // 抖动强度（你可以调节）
+  let amp = this.drawWidth * 0.25;
+
+  // 时间 t（millis 是 tutorial 提到的标准 time-based 方法）
+ if (coupleProgress < 0.98) {
+    let amp = this.drawWidth * 0.40;
+    let t = millis() * 0.003;
+
+  // 用 sin/cos 做平滑抖动 —— 不用 noise、不用 random
+  let offsetX = sin(t + this.rowPosition * 0.4) * amp;
+
+  let offsetY = cos(t * 1.8 + this.rowPosition * 0.25) * amp;
+
+  this.currentX = this.drawXPos + offsetX;
+  this.currentY = this.drawYPos + offsetY;
+  } else {
+    //当 couple 进度 >= 0.9（基本出画了）→ scream 不再抖，回到原位静止
+    this.currentX = this.drawXPos;
+    this.currentY = this.drawYPos;
+  }
+
+  return; // 不执行其他层
   }
 }
 
