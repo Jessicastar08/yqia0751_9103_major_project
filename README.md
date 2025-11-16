@@ -60,3 +60,48 @@ In my version, the sky transitions slowly between day and night tones in a repea
 - **Subtle Main Character Motion** 
 
 Instead of enlarging the main character according to audio volume, I keep the character in a gentle, continuous sway. This subtle movement better aligns with the emotional tone of the original artwork and maintains a quieter atmospheric presence in the scene.
+
+
+
+
+
+---
+
+
+
+
+
+# Part 3 : Inspiration
+
+![An image of scream](assets/gritox.gif)
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+
+
+
+
+# Technical References
+
+To achieve specific effects in my project, I referred to the **p5.js** library and its documentation. Below are the technical references and their applications:
+
+- **lerpColor() – Gradient Transitions**:  
+  [p5.js Documentation: lerpColor](https://p5js.org/reference/p5/lerpColor/)
+
+- **lerp() – Smooth transition of the couple's position and size**:  
+  [p5.js Documentation: lerp](https://p5js.org/reference/p5/lerp/)
+
+- **millis() – Time-based animation control**:  
+  [p5.js Documentation: millis](https://p5js.org/reference/p5/millis/)
