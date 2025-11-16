@@ -13,31 +13,34 @@ let numSegments = 90;
 let imgDrwPrps = {aspect: 0, width: 0, height: 0, xOffset: 0, yOffset: 0};
 let canvasAspectRatio = 0;
 
-// ---- 夜空图（目标颜色，用来从橙→蓝渐变）----
+// Image used to blend the sky from warm dusk tones into night blue
 let nightSkyImg;
 
-// ---- 天色渐变相关（和粒子那段同一个思路）----
-let skyColorRate = 0; // 0 = 白天原色，1 = 完全夜空色
+// Blending factor for day–night transition
+// 0 = day, 1 = night
+let skyColorRate = 0;
 
-// couple 数值
-let coupleStartX_raw = 380;  // 起点 X
-let coupleStartY_raw = 520;  // 起点 Y
+// COUPLE WALKING PATH
 
-let coupleEndX_raw = 1600;  // 终点 X
-let coupleEndY_raw = 1460;  // 终点 Y
+// Couple walking route
+let coupleStartX_raw = 380;  
+let coupleStartY_raw = 520;
+let coupleEndX_raw = 1600; 
+let coupleEndY_raw = 1460;
 
-// 实际在当前画布上绘制用的坐标
+// The coordinates used for actual drawing on the current canvas
 let coupleStartX, coupleStartY;
 let coupleEndX, coupleEndY;
 
-// 动画参数
+// Animation parameters for the couple
 let coupleProgress = 0;
-// How long the couple takes to walk from start to end
-// Walking speed control, at 60 FPS, 480 frames = 8 seconds. 
-let coupleDuration = 360;  
-let coupleStartScale = 0.6; // 远处的大小
-let coupleEndScale   = 1.8; // 靠近时的大小
 
+// Duration
+let coupleDuration = 18;  
+
+// scale 
+let coupleStartScale = 0.6;
+let coupleEndScale   = 1.8; 
 
 // Preload all the assets
 function preload() {
@@ -58,10 +61,9 @@ function setup() {
   // Make canvas the size of the browser window
   createCanvas(windowWidth, windowHeight);
   imgDrwPrps.aspect = baseImg.width / baseImg.height; 
-
   calculateImageDrawProps();
 
-  // 把夜空图缩放到和 red.png 一样大，方便按网格取色
+  // Ensure the night sky matches the sky segment grid
   nightSkyImg.resize(layerImgs[0].width, layerImgs[0].height);
 
   // For each layer image, create its segments
@@ -78,37 +80,36 @@ function setup() {
     }
   }
 
-  // 根据当前图片尺寸，更新 couple 的起点终点坐标
+  // Convert raw coordinates to scaled canvas positions
   updateCouplePositions();
 }
 
 function draw() {
-   background(0);
+  background(0);
 
-   // 这一圈内部的帧数（0 ~ coupleDuration-1）
-   let loopFrame  = frameCount % coupleDuration;
-  // 情侣在当前这圈里的进度：0 → 1
-   let progressInLoop = loopFrame / coupleDuration;
+  // We noticed that different computers draw frames at different speeds, so we use real time (millis) to keep the animation moving at a consistent speed on all devices
+  let time = millis() / 1000;      
 
-  // 更新情侣位置
+  // Determine where in the walking cycle
+  let loopT = time % coupleDuration;   
+
+  // Current progress within this circle
+  let progressInLoop = loopT / coupleDuration;
+
+  // Couple animation progress
   coupleProgress = progressInLoop;
 
-  // ★ 当前是第几圈（0,1,2,3,…）
-  let loopIndex = floor(frameCount / coupleDuration);
-
-   // 用情侣的进度控制颜色：
-  // t = 0   → skyColorRate = 0   （橙）
-  // t = 1   → skyColorRate = 1   （最蓝）
-  // 下一圈重新开始时，coupleProgress 又变 0 → skyColorRate 也回到 0（橙）
+  // Alternate sky direction every loop
+  let loopIndex = floor(time / coupleDuration);
   let t = progressInLoop;
 
+  // Sky gradient
   if (loopIndex % 2 === 0) {
-    // 第 0、2、4...圈：白天 → 夜晚
-    skyColorRate = t;
+    skyColorRate = t;  // Day to Night
   } else {
-    // 第 1、3、5...圈：夜晚 → 白天
-    skyColorRate = 1 - t;
+    skyColorRate = 1 - t;  // Night to Day 
   }
+
   // First draw the full base image
    image(
     baseImg,
@@ -118,15 +119,15 @@ function draw() {
     imgDrwPrps.height
   );
 
-    // Then draw all segment layers with animation
+  // Then draw all segment layers with animation
     for (let i = 0; i < layerSegments.length; i++) {
-     if (i === 5) continue; // 5 是 couple 图层，先跳过
+     if (i === 5) continue; // Couple is drawn separately at the end
 
      const segArray = layerSegments[i];
-      for (const segment of segArray) {
+     for (const segment of segArray) {
         segment.animate();
         segment.draw();
-      }
+     }
     }
 
     drawCoupleImage();
@@ -134,11 +135,10 @@ function draw() {
   
 function updateCouplePositions() {
 
-  // 计算图片在真实画布中的缩放比例
+  // Scale factor between original image and displayed size
   let scaleX = imgDrwPrps.width  / baseImg.width;
   let scaleY = imgDrwPrps.height / baseImg.height;
 
-  // 用 raw 像素坐标，在缩放后重新定位
   coupleStartX = imgDrwPrps.xOffset + coupleStartX_raw * scaleX;
   coupleStartY = imgDrwPrps.yOffset + coupleStartY_raw * scaleY;
 
@@ -146,21 +146,21 @@ function updateCouplePositions() {
   coupleEndY   = imgDrwPrps.yOffset + coupleEndY_raw * scaleY;
 }
 
-
 function drawCoupleImage() {
-  // 位置插值
+  // Position interpolation along the defined path
   let x = lerp(coupleStartX, coupleEndX, coupleProgress);
   let y = lerp(coupleStartY, coupleEndY, coupleProgress);
 
-  // 大小插值（远处小，走近变大）
+  // Scale interpolation
   let s = lerp(coupleStartScale, coupleEndScale, coupleProgress);
 
   push();
   translate(x, y);
   scale(s);
+
   imageMode(CENTER);
   image(layerImgs[5], 0, 0, layerImgs[5].width, layerImgs[5].height);
-  imageMode(CORNER); // 防止影响别的地方
+
   pop();
 }
 
@@ -189,8 +189,11 @@ function createSegmentsFromImage(srcImg, targetArray, layerIndex) {
 
   // We use nested loops to scan the image:
   let positionInColumn = 0;
+
   for (let segYPos = 0; segYPos < srcImg.height; segYPos += segmentHeight) {
+
     let positionInRow = 0;
+
     for (let segXPos = 0; segXPos < srcImg.width; segXPos += segmentWidth) {
 
       // Pick the colour at the center of this grid
@@ -229,19 +232,18 @@ function calculateImageDrawProps() {
   if (imgDrwPrps.aspect > canvasAspectRatio) {
     
     imgDrwPrps.width = width;
-   
     imgDrwPrps.height = width / imgDrwPrps.aspect;
     imgDrwPrps.yOffset = (height - imgDrwPrps.height) / 2;
     imgDrwPrps.xOffset = 0;
+
   } else if (imgDrwPrps.aspect < canvasAspectRatio) {
    
     imgDrwPrps.height = height;
-  
     imgDrwPrps.width = height * imgDrwPrps.aspect;
     imgDrwPrps.xOffset = (width - imgDrwPrps.width) / 2;
     imgDrwPrps.yOffset = 0;
-  }
-  else {
+
+  }else {
   
     imgDrwPrps.width = width;
     imgDrwPrps.height = height;
@@ -250,7 +252,7 @@ function calculateImageDrawProps() {
   }
 }
 
-// This constructor stores the grid position, colour, angle, and layer information
+// This constructor stores the grid position, colour, alpha, angle and layer information
 class ImageSegment {
 
   constructor(
@@ -258,13 +260,13 @@ class ImageSegment {
     rowPositionInPrm,
     srcImgSegColourInPrm,
     angleInPrm,
-    layerIndexInPrm  
-  ) {
+    layerIndexInPrm  ) {
+    
     this.columnPosition = columnPositionInPrm;
     this.rowPosition = rowPositionInPrm;
     this.dayColour = color(srcImgSegColourInPrm);
     this.srcImgSegColour = this.dayColour;
-    this.baseAlpha = alpha(this.dayColour);  // ⭐ 记住透明度
+    this.baseAlpha = alpha(this.dayColour); 
     this.angle = angleInPrm;
     this.layerIndex = layerIndexInPrm;
 
@@ -273,6 +275,8 @@ class ImageSegment {
     this.drawWidth = 0;
     this.drawHeight = 0;
     this.currentY = 0;
+    
+    // Random phase so waves do not move uniformly
     this.phase = random(TWO_PI);
   }
 
@@ -280,7 +284,6 @@ class ImageSegment {
   calculateSegDrawProps() {
     this.drawWidth = imgDrwPrps.width / numSegments;
     this.drawHeight = imgDrwPrps.height / numSegments;
-    
     
     this.drawXPos = this.rowPosition * this.drawWidth + imgDrwPrps.xOffset;
     this.drawYPos = this.columnPosition * this.drawHeight + imgDrwPrps.yOffset;
@@ -299,9 +302,9 @@ class ImageSegment {
    this.currentX = this.drawXPos;
    this.currentY = this.drawYPos;
 
-  // Layer 0 moves up and down like a smooth wave so the sunset sky looks alive instead of flat
+  // Layer 0 moves up and down like a smooth wave so the sunset sky looks alive instead of flat, also with colour transition
    if (this.layerIndex === 0) {
-      // 天空：有波浪 + 颜色渐变
+    
       let wavelength = 24.0;
       let k = TWO_PI / wavelength;    
       let speed = 0.8;   
@@ -313,28 +316,28 @@ class ImageSegment {
       this.currentX = this.drawXPos;
       this.currentY = this.drawYPos + waveOffsetY;
 
+      // Sample the night sky colour that corresponds to this grid cell
       let segW = layerImgs[0].width  / numSegments;
-  let segH = layerImgs[0].height / numSegments;
-  let sampleX = (this.rowPosition + 0.5) * segW;
-  let sampleY = (this.columnPosition + 0.5) * segH;
+      let segH = layerImgs[0].height / numSegments;
+      let sampleX = (this.rowPosition + 0.5) * segW;
+      let sampleY = (this.columnPosition + 0.5) * segH;
 
-  // 从 nightSkyImg 取对应位置的颜色
-  let nightCol = nightSkyImg.get(sampleX, sampleY);
+      let nightCol = nightSkyImg.get(sampleX, sampleY);
 
-  let startCol  = this.dayColour;  // red.png 的原本橙色
-  // 目标色：night sky 的 RGB + 原来的 alpha
-  let targetCol = color(
-    red(nightCol),
-    green(nightCol),
-    blue(nightCol),
-    this.baseAlpha
-  );
+      let startCol  = this.dayColour;  // original colour
 
-  // 按 skyColorRate 在两张图之间渐变
-  this.srcImgSegColour = lerpColor(startCol, targetCol, skyColorRate);
+      let targetCol = color(
+        red(nightCol),
+        green(nightCol),
+        blue(nightCol),
+        this.baseAlpha
+      );
 
-  return;
-  }
+    // Blend original warm tone to night tone
+      this.srcImgSegColour = lerpColor(startCol, targetCol, skyColorRate);
+
+      return;
+   }
 
   // Layer 2 move up and down using vertical lines
   if (this.layerIndex === 2) {
@@ -350,7 +353,6 @@ class ImageSegment {
 
     // Only the Y moves，X stays fixed
     this.currentY = this.drawYPos + waveOffset;
-
   }
 
   // Layer 1 moves left and right like flowing water
@@ -374,26 +376,26 @@ class ImageSegment {
       let amp = this.drawWidth * 0.40;
       let t = millis() * 0.0025;
 
-  // 用 sin/cos 做平滑抖动 
+     // Provides micro-movement using sin+cos offsets
       let offsetX = sin(t + this.rowPosition * 0.35) * amp;
-
       let offsetY = cos(t * 1.8 + this.rowPosition * 0.2) * amp;
 
       this.currentX = this.drawXPos + offsetX;
       this.currentY = this.drawYPos + offsetY;
 
-    return; // 不执行其他层
+      return;
   }
 }
 
-  // Draws out small line in the centre of each segment, using the correct angle and the animated position.
+  // Draws out small line in the centre of each segment, using the correct angle and the animated position
   draw() {
     if (this.baseAlpha === 0) return;
 
+    // Sky lines slightly thicker for visual emphasis
     if (this.layerIndex === 0) {
-    strokeWeight(8);   // ⭐ 你想要的粗细（6 或 8 或 10）
+    strokeWeight(8); 
     } else {
-    strokeWeight(3);   // 其他层保持原来粗细
+    strokeWeight(3);
     }
 
     stroke(this.srcImgSegColour);
