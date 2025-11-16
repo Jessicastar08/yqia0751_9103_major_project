@@ -33,7 +33,7 @@ let coupleEndX, coupleEndY;
 // 动画参数
 let coupleProgress = 0;
 // How long the couple takes to walk from start to end
-// Walking speed control, at 60 FPS, 360 frames = 6 seconds. 
+// Walking speed control, at 60 FPS, 480 frames = 8 seconds. 
 let coupleDuration = 360;  
 let coupleStartScale = 0.6; // 远处的大小
 let coupleEndScale   = 1.8; // 靠近时的大小
@@ -85,16 +85,30 @@ function setup() {
 function draw() {
    background(0);
 
-   coupleProgress = (frameCount % coupleDuration) / coupleDuration;
+   // 这一圈内部的帧数（0 ~ coupleDuration-1）
+   let loopFrame  = frameCount % coupleDuration;
+  // 情侣在当前这圈里的进度：0 → 1
+   let progressInLoop = loopFrame / coupleDuration;
+
+  // 更新情侣位置
+  coupleProgress = progressInLoop;
+
+  // ★ 当前是第几圈（0,1,2,3,…）
+  let loopIndex = floor(frameCount / coupleDuration);
 
    // 用情侣的进度控制颜色：
   // t = 0   → skyColorRate = 0   （橙）
   // t = 1   → skyColorRate = 1   （最蓝）
   // 下一圈重新开始时，coupleProgress 又变 0 → skyColorRate 也回到 0（橙）
-  let t = coupleProgress;
-  // 0 → 1 的平滑曲线（不会中途回到 0）
-  skyColorRate = 0.5 - 0.5 * cos(PI * t);
+  let t = progressInLoop;
 
+  if (loopIndex % 2 === 0) {
+    // 第 0、2、4...圈：白天 → 夜晚
+    skyColorRate = t;
+  } else {
+    // 第 1、3、5...圈：夜晚 → 白天
+    skyColorRate = 1 - t;
+  }
   // First draw the full base image
    image(
     baseImg,
@@ -357,27 +371,16 @@ class ImageSegment {
   }
 
   if (this.layerIndex === 4) {
-
-  // 抖动强度（你可以调节）
-   let amp = this.drawWidth * 0.25;
-
-  // 时间 t（millis 是 tutorial 提到的标准 time-based 方法）
-    if (coupleProgress < 0.98) {
       let amp = this.drawWidth * 0.40;
-      let t = millis() * 0.003;
+      let t = millis() * 0.0025;
 
   // 用 sin/cos 做平滑抖动 
-      let offsetX = sin(t + this.rowPosition * 0.4) * amp;
+      let offsetX = sin(t + this.rowPosition * 0.35) * amp;
 
-      let offsetY = cos(t * 1.8 + this.rowPosition * 0.25) * amp;
+      let offsetY = cos(t * 1.8 + this.rowPosition * 0.2) * amp;
 
       this.currentX = this.drawXPos + offsetX;
       this.currentY = this.drawYPos + offsetY;
-    } else {
-  //当 couple 进度 >= 0.9（基本出画了）→ scream 不再抖，回到原位静止
-      this.currentX = this.drawXPos;
-      this.currentY = this.drawYPos;
-    }
 
     return; // 不执行其他层
   }
@@ -387,8 +390,13 @@ class ImageSegment {
   draw() {
     if (this.baseAlpha === 0) return;
 
+    if (this.layerIndex === 0) {
+    strokeWeight(8);   // ⭐ 你想要的粗细（6 或 8 或 10）
+    } else {
+    strokeWeight(3);   // 其他层保持原来粗细
+    }
+
     stroke(this.srcImgSegColour);
-    strokeWeight(3);
 
     // Find the centre of the segment
     let cx = this.currentX + this.drawWidth / 2;
