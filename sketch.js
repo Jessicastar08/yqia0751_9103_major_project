@@ -13,6 +13,12 @@ let numSegments = 90;
 let imgDrwPrps = {aspect: 0, width: 0, height: 0, xOffset: 0, yOffset: 0};
 let canvasAspectRatio = 0;
 
+// ---- 夜空图（目标颜色，用来从橙→蓝渐变）----
+let nightSkyImg;
+
+// ---- 天色渐变相关（和粒子那段同一个思路）----
+let skyColorRate = 0; // 0 = 白天原色，1 = 完全夜空色
+
 // couple 数值
 let coupleStartX_raw = 380;  // 起点 X
 let coupleStartY_raw = 520;  // 起点 Y
@@ -44,6 +50,8 @@ function preload() {
   layerImgs[3] = loadImage('assets/bridge.png');
   layerImgs[4] = loadImage('assets/scream.png');
   layerImgs[5] = loadImage('assets/couple.png');
+
+  nightSkyImg = loadImage('assets/night sky.png');
 }
 
 function setup() {
@@ -52,8 +60,12 @@ function setup() {
   imgDrwPrps.aspect = baseImg.width / baseImg.height; 
 
   calculateImageDrawProps();
+
+  // 把夜空图缩放到和 red.png 一样大，方便按网格取色
+  nightSkyImg.resize(layerImgs[0].width, layerImgs[0].height);
+
   // For each layer image, create its segments
-  for (let i = 0; i < layerImgs.length; i++) {
+  for (let i = 0; i < 6; i++) {
     let segArray = [];                         
     createSegmentsFromImage(layerImgs[i], segArray, i);
     layerSegments.push(segArray);              
@@ -66,7 +78,7 @@ function setup() {
     }
   }
 
-   // 根据当前图片尺寸，更新 couple 的起点终点坐标
+  // 根据当前图片尺寸，更新 couple 的起点终点坐标
   updateCouplePositions();
 }
 
@@ -74,6 +86,14 @@ function draw() {
    background(0);
 
    coupleProgress = (frameCount % coupleDuration) / coupleDuration;
+
+   // 用情侣的进度控制颜色：
+  // t = 0   → skyColorRate = 0   （橙）
+  // t = 1   → skyColorRate = 1   （最蓝）
+  // 下一圈重新开始时，coupleProgress 又变 0 → skyColorRate 也回到 0（橙）
+  let t = coupleProgress;
+  // 0 → 1 的平滑曲线（不会中途回到 0）
+  skyColorRate = 0.5 - 0.5 * cos(PI * t);
 
   // First draw the full base image
    image(
@@ -135,6 +155,10 @@ function windowResized() {
   resizeCanvas(windowWidth, windowHeight);
 
   calculateImageDrawProps();
+    if (nightSkyImg && layerImgs[0]) {
+    nightSkyImg.resize(layerImgs[0].width, layerImgs[0].height);
+  }
+  
   for (const segArray of layerSegments) {
     for (const segment of segArray) {
       segment.calculateSegDrawProps();
@@ -203,7 +227,7 @@ function calculateImageDrawProps() {
     imgDrwPrps.xOffset = (width - imgDrwPrps.width) / 2;
     imgDrwPrps.yOffset = 0;
   }
-  else if (imgDrwPrps.aspect == canvasAspectRatio) {
+  else {
   
     imgDrwPrps.width = width;
     imgDrwPrps.height = height;
@@ -224,7 +248,9 @@ class ImageSegment {
   ) {
     this.columnPosition = columnPositionInPrm;
     this.rowPosition = rowPositionInPrm;
-    this.srcImgSegColour = srcImgSegColourInPrm;
+    this.dayColour = color(srcImgSegColourInPrm);
+    this.srcImgSegColour = this.dayColour;
+    this.baseAlpha = alpha(this.dayColour);  // ⭐ 记住透明度
     this.angle = angleInPrm;
     this.layerIndex = layerIndexInPrm;
 
@@ -246,38 +272,55 @@ class ImageSegment {
     this.drawYPos = this.columnPosition * this.drawHeight + imgDrwPrps.yOffset;
 
     // Called once during setup or when the window is resized
+    this.currentX = this.drawXPos;
     this.currentY = this.drawYPos;
   }
 
   animate() {
 
   // We noticed that different computers draw frames at different speeds, so we use real time (millis) to keep the animation moving at a consistent speed on all devices
-  let t = millis() / 1000.0;
+   let t = millis() / 1000.0;
 
   // Start each frame from the original position
-  this.currentX = this.drawXPos;
-  this.currentY = this.drawYPos;
+   this.currentX = this.drawXPos;
+   this.currentY = this.drawYPos;
 
   // Layer 0 moves up and down like a smooth wave so the sunset sky looks alive instead of flat
-    if (this.layerIndex === 0) {
-  
-      // Controls how wide each wave is
+   if (this.layerIndex === 0) {
+      // 天空：有波浪 + 颜色渐变
       let wavelength = 24.0;
       let k = TWO_PI / wavelength;    
-
-      // How fast it is moving
       let speed = 0.8;   
-
-      // How high the wave moves up/down
       let amplitude = this.drawHeight * 0.7;  
+
       let phase = k * this.rowPosition - speed * t;
       let waveOffsetY = sin(phase) * amplitude;
 
-      // X stays still, Y moves up and down
       this.currentX = this.drawXPos;
       this.currentY = this.drawYPos + waveOffsetY;
-      return; 
-    }
+
+      let segW = layerImgs[0].width  / numSegments;
+  let segH = layerImgs[0].height / numSegments;
+  let sampleX = (this.rowPosition + 0.5) * segW;
+  let sampleY = (this.columnPosition + 0.5) * segH;
+
+  // 从 nightSkyImg 取对应位置的颜色
+  let nightCol = nightSkyImg.get(sampleX, sampleY);
+
+  let startCol  = this.dayColour;  // red.png 的原本橙色
+  // 目标色：night sky 的 RGB + 原来的 alpha
+  let targetCol = color(
+    red(nightCol),
+    green(nightCol),
+    blue(nightCol),
+    this.baseAlpha
+  );
+
+  // 按 skyColorRate 在两张图之间渐变
+  this.srcImgSegColour = lerpColor(startCol, targetCol, skyColorRate);
+
+  return;
+  }
 
   // Layer 2 move up and down using vertical lines
   if (this.layerIndex === 2) {
@@ -293,6 +336,7 @@ class ImageSegment {
 
     // Only the Y moves，X stays fixed
     this.currentY = this.drawYPos + waveOffset;
+
   }
 
   // Layer 1 moves left and right like flowing water
@@ -309,37 +353,40 @@ class ImageSegment {
     // Only X moves, Y stays fixed
     this.currentX = this.drawXPos + waveOffset;
     this.currentY = this.drawYPos;
+
   }
 
   if (this.layerIndex === 4) {
 
   // 抖动强度（你可以调节）
-  let amp = this.drawWidth * 0.25;
+   let amp = this.drawWidth * 0.25;
 
   // 时间 t（millis 是 tutorial 提到的标准 time-based 方法）
- if (coupleProgress < 0.98) {
-    let amp = this.drawWidth * 0.40;
-    let t = millis() * 0.003;
+    if (coupleProgress < 0.98) {
+      let amp = this.drawWidth * 0.40;
+      let t = millis() * 0.003;
 
-  // 用 sin/cos 做平滑抖动 —— 不用 noise、不用 random
-  let offsetX = sin(t + this.rowPosition * 0.4) * amp;
+  // 用 sin/cos 做平滑抖动 
+      let offsetX = sin(t + this.rowPosition * 0.4) * amp;
 
-  let offsetY = cos(t * 1.8 + this.rowPosition * 0.25) * amp;
+      let offsetY = cos(t * 1.8 + this.rowPosition * 0.25) * amp;
 
-  this.currentX = this.drawXPos + offsetX;
-  this.currentY = this.drawYPos + offsetY;
-  } else {
-    //当 couple 进度 >= 0.9（基本出画了）→ scream 不再抖，回到原位静止
-    this.currentX = this.drawXPos;
-    this.currentY = this.drawYPos;
-  }
+      this.currentX = this.drawXPos + offsetX;
+      this.currentY = this.drawYPos + offsetY;
+    } else {
+  //当 couple 进度 >= 0.9（基本出画了）→ scream 不再抖，回到原位静止
+      this.currentX = this.drawXPos;
+      this.currentY = this.drawYPos;
+    }
 
-  return; // 不执行其他层
+    return; // 不执行其他层
   }
 }
 
   // Draws out small line in the centre of each segment, using the correct angle and the animated position.
   draw() {
+    if (this.baseAlpha === 0) return;
+
     stroke(this.srcImgSegColour);
     strokeWeight(3);
 
