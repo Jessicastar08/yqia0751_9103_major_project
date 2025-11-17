@@ -77,7 +77,7 @@ Instead of enlarging the main character according to audio volume, I keep the ch
 
 This image of day and night shows the transition from night to day and the changes in tones. It inspired me to incorporate a similar day-to-night effect in my work to convey the passage of time.
 
-
+![An image of Day and Night](assets/day and night.jpg)
 
 
 
@@ -95,6 +95,10 @@ This image of day and night shows the transition from night to day and the chang
 # Part 4: Technical Explanation of Individual Code
 
 ![An image of Screenshot 1](assets/lerp.png)
+
+
+
+
 
 
 
