@@ -71,11 +71,13 @@ Instead of enlarging the main character according to audio volume, I keep the ch
 
 # Part 3 : Inspiration
 
-![An image of Day and Night](assets/day and night.jpg)
-
-
+![An image of Day and Night](readme_assets\day_night.jpg)
 
 This image of day and night shows the transition from night to day and the changes in tones. It inspired me to incorporate a similar day-to-night effect in my work to convey the passage of time.
+
+
+
+
 
 ![An image of Day and Night](assets/day and night.jpg)
 
@@ -92,11 +94,14 @@ This image of day and night shows the transition from night to day and the chang
 ---
 
 
+
+
+
 # Part 4: Technical Explanation of Individual Code
 
 ![An image of Screenshot 1](readme_assets/time1.png)
 - **Functionality**:  
-  This part of the code uses millis() to run the entire scene on a fixed time cycle. Every 18 seconds the animation resets and begins a new loop. During each loop, progressInLoop moves from 0 to 1, and every animated element in the scene uses this shared value. This allows the whole scene to move at a steady speed that is not affected by different frame rates on different computers.
+  This part of the code uses `millis()` to run the entire scene on a fixed time cycle. Every 18 seconds the animation resets and begins a new loop. During each loop, `progressInLoop` moves from 0 to 1, and every animated element in the scene uses this shared value. This allows the whole scene to move at a steady speed that is not affected by different frame rates on different computers.
 
 - **Technical Highlight**:  
   By relying on real-time values instead of frame counts, the animation avoids running too fast or too slow on different machines. This makes the timing consistent and gives the scene a smooth, continuous rhythm.
@@ -110,7 +115,7 @@ This image of day and night shows the transition from night to day and the chang
   The couple walks along the bridge from the distance toward the viewer. Their position gradually shifts from the starting point to the ending point, and their scale increases from 0.6 to 1.8. This creates the feeling that they are slowly approaching the viewer. The movement feels even because everything is driven by the same progress value.
 
 - **Technical Highlight**:  
-  lerp() uses coupleProgress to smoothly transition between the start and end values, so the couple never jumps or snaps. The three interpolations control X position, Y position and scale, allowing the walk cycle to maintain a consistent direction and pacing.
+  `lerp()` uses `coupleProgress` to smoothly transition between the start and end values, so the couple never jumps or snaps. The three interpolations control X position, Y position and scale, allowing the walk cycle to maintain a consistent direction and pacing.
 
 
 
@@ -121,7 +126,7 @@ This image of day and night shows the transition from night to day and the chang
   Each sky segment gradually shifts from its original warm orange tone to deep night blue. The colour changes stay synchronised with the couple’s time cycle, forming a repeating day to night loop.
 
 - **Technical Highlight**:  
-  Every sky line samples the matching pixel from nightSkyImg and blends it with the original colour using lerpColor() and skyColorRate. The transition is time-driven, producing a smooth, layered gradient rather than a flat colour shift.
+  Every sky line samples the matching pixel from nightSkyImg and blends it with the original colour using `lerpColor()` and `skyColorRate`. The transition is time-driven, producing a smooth, layered gradient rather than a flat colour shift.
 
 
 
@@ -132,7 +137,7 @@ This image of day and night shows the transition from night to day and the chang
   The main character has a constant, gentle shake both horizontally and vertically. This adds a sense of instability and emotional tension that fits the atmosphere of the original artwork.
 
 - **Technical Highlight**:  
-  The shaking comes from adding small, time-based offsets using sin() and cos(). The frequency and intensity are influenced by the global time t as well as each segment’s rowPosition, making it feel more organic.
+  The shaking comes from adding small, time-based offsets using `sin()` and `cos()`. The frequency and intensity are influenced by the global time `t` as well as each segment’s `rowPosition`, making it feel more organic.
 
 
 
