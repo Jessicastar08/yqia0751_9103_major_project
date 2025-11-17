@@ -71,21 +71,16 @@ Instead of enlarging the main character according to audio volume, I keep the ch
 
 # Part 3 : Inspiration
 
-![An image of Day and Night](readme_assets\day_night.jpg)
+![An image of Day and Night](readme_assets/day_night.jpg)
 
 This image of day and night shows the transition from night to day and the changes in tones. It inspired me to incorporate a similar day-to-night effect in my work to convey the passage of time.
 
 
+![An image of Lion King Walking 1](readme_assets/lion1.jpg)
 
+![An image of Lion King Walking 2](readme_assets/lion2.gif)
 
-
-![An image of Day and Night](assets/day and night.jpg)
-
-
-
-
-
-
+Another inspiration for my animation comes from the walking sequences in The Lion King, where the characters move steadily across the screen while the environment behind them changes dramatically. Although the characters themselves stay the same size, the shifting backgrounds create a strong sense of time passing and emotional progression. This idea closely relates to my couple animation: the couple walks forward at a steady pace, the changing sky conveys the passage of time. The effect is less about physical movement and more about showing a journey through changing moments.
 
 
 
